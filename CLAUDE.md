@@ -4,16 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-LaTeX document set for a 70 GHz mm-wave phase interpolator using frequency doubling: one IEEE conference paper and one Beamer presentation. Each subdirectory is an independent Overleaf project synced via `git subtree`.
+LaTeX document set for a 70 GHz mm-wave phase interpolator using frequency doubling: one IEEE conference paper and one Beamer presentation.
+
+## Branch layout
+
+| Branch | Contents | Overleaf remote |
+|---|---|---|
+| `master` | CLAUDE.md, Makefile, scripts | — |
+| `paper` | flat paper project (main.tex, references.bib, sections/) | `overleaf-paper` |
+| `presentation` | flat presentation project (main.tex, figures/) | `overleaf-presentation` |
+
+Each document branch maps 1-to-1 with its Overleaf project root — no subdirectory prefix.
 
 ## Overleaf sync
 
 Two Overleaf remotes are configured in `.git/config` (not committed):
-
-| Remote | Subdirectory | Overleaf project |
-|---|---|---|
-| `overleaf-paper` | `paper/` | mmWave-PI-Paper |
-| `overleaf-presentation` | `presentation/` | mmWave-PI-Presentation |
 
 Auth token is embedded in the remote URLs inside `.git/config`. To update it:
 ```bash
@@ -21,29 +26,32 @@ git remote set-url overleaf-paper https://git:NEW_TOKEN@git.overleaf.com/69e7102
 git remote set-url overleaf-presentation https://git:NEW_TOKEN@git.overleaf.com/69e7110aca33bf212bc5d0d0
 ```
 
-**Overleaf prohibits force pushes.** `make push-*` uses `git subtree push` which works normally after the initial setup. If you ever need to re-bootstrap a remote (e.g. after deleting and recreating the Overleaf project), follow the fetch→checkout→replace→push pattern in the `overleaf-git-latex` skill.
+**Overleaf prohibits force pushes.** Pushes are normal fast-forwards; pulls use `git update-ref` to advance the local branch without a checkout.
 
 ```bash
-make push-paper          # git subtree push --prefix=paper overleaf-paper master
-make push-presentation   # git subtree push --prefix=presentation overleaf-presentation master
-git push                 # sync to GitHub (origin)
+make push-paper          # git push overleaf-paper paper:master
+make push-presentation   # git push overleaf-presentation presentation:master
+git push                 # sync all branches to GitHub (origin)
 
-make pull-paper          # squash-merge Overleaf edits back under paper/
+make pull-paper          # fetch + fast-forward local paper branch
 make pull-presentation
 ```
 
 ## Build
 
+Check out the relevant branch first, then build:
+
 ```bash
-make build-paper         # latexmk -pdf -cd paper/main.tex
-make build-presentation  # latexmk -pdf -cd presentation/main.tex
-make clean-paper
-make clean-presentation
+git checkout paper
+latexmk -pdf main.tex    # or: make build-paper (from master, no-op if not on branch)
+
+git checkout presentation
+latexmk -pdf main.tex
 ```
 
 ## Python / plot scripts
 
-Managed with `uv`. Scripts export PDF or PGF into `paper/figures/` or `presentation/figures/`.
+Managed with `uv`. Scripts export PDF or PGF into `figures/` on the respective branch.
 
 ```bash
 uv sync          # create/update .venv
@@ -54,22 +62,26 @@ Prefer inline TikZ/PGFPlots for analytically defined plots. Use matplotlib only 
 
 ## Repository layout
 
+**`paper` branch:**
 ```
-paper/
-  main.tex              IEEEtran conference, \input{sections/*}
-  references.bib
-  sections/
-    introduction.tex
-    architecture.tex    block diagram (fig:arch)
-    circuit.tex         VGA + APF Bode plot (fig:bode)
-    analysis.tex        phasor diagram (fig:phasor), phase noise equations
-    simulation.tex      phase noise profiles (fig:pn)
-    conclusion.tex
-  figures/              imported PDF/PGF from Python scripts
+main.tex              IEEEtran conference, \input{sections/*}
+main.pdf
+references.bib
+sections/
+  introduction.tex
+  architecture.tex    block diagram (fig:arch)
+  circuit.tex         VGA + APF Bode plot (fig:bode)
+  analysis.tex        phasor diagram (fig:phasor), phase noise equations
+  simulation.tex      phase noise profiles (fig:pn)
+  conclusion.tex
+figures/              imported PDF/PGF from Python scripts
+```
 
-presentation/
-  main.tex              Beamer + Moloch theme, 16:9
-  figures/
+**`presentation` branch:**
+```
+main.tex              Beamer + Moloch theme, 16:9
+main.pdf
+figures/
 ```
 
 ## Architecture and key concepts
