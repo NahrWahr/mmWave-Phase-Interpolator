@@ -158,14 +158,14 @@
       \end{itemize}
 
       \medskip
-      \textbf{Two practical knobs:}
-      \begin{description}\setlength\itemsep{2pt}
-        \item[\alert{Quadrant select}] choose which two of
-              $\{I, Q, \overline{I}, \overline{Q}\}$ to sum
-              $\to$ $360^\circ$ coverage (coarse)
-        \item[\alert{Weight ratio}] $N$-bit DAC sets $\beta/\alpha$
-              $\to$ $2^N$ phase steps inside the quadrant (fine)
-      \end{description}
+      \textbf{Two knobs:}
+      \begin{itemize}\setlength\itemsep{2pt}
+        \item \alert{Quadrant select} (coarse) — pick two of
+              $\{I, Q, \overline{I}, \overline{Q}\}$ for $360^\circ$
+              coverage
+        \item \alert{Weight ratio} (fine) — $N$-bit DAC on
+              $\beta/\alpha$ gives $2^N$ steps per quadrant
+      \end{itemize}
     \end{column}
   \end{columns}
 \end{frame}
@@ -289,18 +289,15 @@
 \begin{frame}{Application 2 — Optical Coherent Receivers}
   \begin{columns}[T]
     \begin{column}{0.50\linewidth}
-      \textbf{Setting.} 100--800 Gb/s coherent links: optical front end
-      delivers I and Q baseband (after mixing with a local laser) into
-      ADCs running at \SI{50}{\giga S/s}+.
+      \textbf{Setting.} 100--800\,Gb/s coherent links: optical front end
+      delivers I/Q baseband into ADCs at \SI{50}{\giga S/s}+.
 
-      \medskip
-      \textbf{Where the PI lives.}
-      \begin{itemize}
-        \item Generates the \emph{ADC sampling clock phase} per lane
-        \item Tracks slow phase drift between TX and RX symbol clocks
-              with no analog VCO retuning
-        \item Per-lane PI codes equalise inter-lane skew on parallel
-              DSP fabric
+      \smallskip
+      \textbf{PI's role:}
+      \begin{itemize}\setlength\itemsep{1pt}
+        \item sets the \emph{ADC sample-clock phase} per lane
+        \item tracks slow TX/RX symbol-clock drift, no analog retuning
+        \item per-lane codes equalise inter-lane skew
       \end{itemize}
 
       \begin{alertblock}{Resolution matters}
