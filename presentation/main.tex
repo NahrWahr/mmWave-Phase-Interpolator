@@ -357,17 +357,17 @@
         \draw[<->, uciAmber] (0.25,0.55) -- (1.05,0.55)
             node[midway, above]{$d$};
 
-        \def\theta{30}
+        \def\steer{30}
         \draw[->, uciBlue, very thick]
-            (2.0,1.0) -- ++({\theta}:2.5)
+            (2.0,1.0) -- ++({\steer}:2.5)
             node[above right]{wavefront $\theta$};
 
         \foreach \i in {0,1,2,3,4} {
           \draw[uciBlue!50, dashed]
-            (\i*0.8+0.25, 0.3) -- ++({90+\theta}:2.0);
+            (\i*0.8+0.25, 0.3) -- ++({90+\steer}:2.0);
         }
 
-        \draw[<->, red, thick] (0.25,2.6) -- ++({90-\theta}:0.8);
+        \draw[<->, red, thick] (0.25,2.6) -- ++({90-\steer}:0.8);
         \node[red, right=2pt] at (0.55,2.9) {$d\sin\theta$};
 
         \node[uciNavy, font=\scriptsize] at (3.0,-0.9)
