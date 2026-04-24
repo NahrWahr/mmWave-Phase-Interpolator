@@ -1,0 +1,68 @@
+% v1.0 — UCI / HIE Lab Beamer theme. \input from any week's main.tex
+% Requires: \usetheme{moloch}, tikz, graphicx already loaded.
+% Provides: warm-pastel palette, UCI logo top-right, gold footer with
+% page counter (left) and "HIE Lab" (right).
+
+\molochset{
+  sectionpage    = progressbar,
+  subsectionpage = none,
+  numbering      = fraction,
+  progressbar    = foot,
+  block          = fill,
+}
+
+% ── UC Irvine warm-pastel palette ───────────────────────────────────────────
+\definecolor{uciGold}{HTML}{F0C040}
+\definecolor{uciGoldPale}{HTML}{FAF0CC}
+\definecolor{uciBlue}{HTML}{0064A4}
+\definecolor{uciNavy}{HTML}{1B3D6F}
+\definecolor{uciCream}{HTML}{FFF8F0}
+\definecolor{uciAmber}{HTML}{C8830A}
+\definecolor{uciSand}{HTML}{EED8A0}
+
+\setbeamercolor{normal text}{fg=uciNavy, bg=uciCream}
+\setbeamercolor{alerted text}{fg=uciAmber}
+\setbeamercolor{example text}{fg=uciBlue}
+\setbeamercolor{frametitle}{fg=uciNavy, bg=uciGoldPale}
+\setbeamercolor{title separator}{fg=uciGold}
+\setbeamercolor{progress bar}{fg=uciGold, bg=uciSand}
+\setbeamercolor{progress bar in head/foot}{fg=uciGold, bg=uciSand}
+\setbeamercolor{progress bar in section page}{fg=uciGold, bg=uciSand}
+\setbeamercolor{block title}{fg=uciNavy, bg=uciSand}
+\setbeamercolor{block body}{fg=uciNavy, bg=uciGoldPale}
+\setbeamercolor{block title alerted}{fg=white, bg=uciAmber}
+\setbeamercolor{block body alerted}{fg=uciNavy, bg=uciAmber!20}
+\setbeamercolor{block title example}{fg=white, bg=uciBlue}
+\setbeamercolor{block body example}{fg=uciNavy, bg=uciBlue!12}
+\setbeamercolor{palette primary}{fg=uciCream, bg=uciNavy}
+
+% ── UCI logo — top-right overlay on every titled frame and the title page ──
+\addtobeamertemplate{frametitle}{}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=north east, inner xsep=6pt, inner ysep=5pt]
+      at (current page.north east)
+      {\includegraphics[height=0.58cm]{figures/uci-logo}};
+  \end{tikzpicture}%
+}
+\addtobeamertemplate{title page}{}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=north east, inner xsep=6pt, inner ysep=5pt]
+      at (current page.north east)
+      {\includegraphics[height=0.58cm]{figures/uci-logo}};
+  \end{tikzpicture}%
+}
+
+% ── Footer: gold band — frame counter left, HIE Lab right ──────────────────
+\setbeamercolor{uci footer}{fg=uciNavy, bg=uciGold}
+\setbeamerfont{uci footer}{size=\footnotesize, series=\bfseries}
+
+\setbeamertemplate{footline}{%
+  \begin{beamercolorbox}[wd=\paperwidth, ht=0.50cm, dp=0.15cm,
+                         leftskip=0.50cm, rightskip=0.50cm]{uci footer}%
+    \usebeamerfont{uci footer}%
+    \insertframenumber\,/\,\inserttotalframenumber%
+    \hfill
+    HIE Lab%
+  \end{beamercolorbox}%
+  \usebeamertemplate*{progress bar in head/foot}%
+}

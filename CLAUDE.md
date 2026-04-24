@@ -29,7 +29,8 @@ mirror the two subdirectories to two separate Overleaf projects.
 ├── presentation/           ALL presentation work goes here
 │   ├── main.tex            current week's deck (Beamer + Moloch, 16:9)
 │   ├── main.pdf            committed alongside source
-│   ├── figures/            shared, reusable TikZ snippets / PGF / images
+│   ├── uci-theme.tex       UCI/HIE Lab theme — \input from every main.tex
+│   ├── figures/            shared assets incl. uci-logo.{pdf,svg}
 │   └── archive/            past weeks' decks, one dir per week
 │       ├── INDEX.md        date · topic · directory table
 │       └── YYYY-MM-DD-slug/   {main.tex, main.pdf} snapshot
@@ -61,7 +62,13 @@ target** so the PDF in `output/` reflects the source.
 
 ## Weekly presentation workflow
 
-The live `presentation/main.tex` is *this week's* deck. At week's end:
+The live `presentation/main.tex` is *this week's* deck. **Every week's deck
+must `\input{uci-theme.tex}`** in its preamble — that file is the canonical
+UCI / HIE Lab theme (warm-pastel palette, UCI logo top-right on every titled
+frame, gold footer with page counter and "HIE Lab"). Don't redefine the
+palette inline; edit `uci-theme.tex` if the look needs to change repo-wide.
+
+At week's end:
 
 1. `cp presentation/main.{tex,pdf} presentation/archive/YYYY-MM-DD-slug/`
 2. Append the row to `presentation/archive/INDEX.md`.

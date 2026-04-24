@@ -14,38 +14,8 @@
 \usepackage{booktabs}
 \usepackage{microtype}
 
-\molochset{
-  sectionpage    = progressbar,
-  subsectionpage = none,
-  numbering      = fraction,
-  progressbar    = foot,
-  block          = fill,
-}
-
-% ── UC Irvine warm-pastel palette ───────────────────────────────────────────
-\definecolor{uciGold}{HTML}{F0C040}
-\definecolor{uciGoldPale}{HTML}{FAF0CC}
-\definecolor{uciBlue}{HTML}{0064A4}
-\definecolor{uciNavy}{HTML}{1B3D6F}
-\definecolor{uciCream}{HTML}{FFF8F0}
-\definecolor{uciAmber}{HTML}{C8830A}
-\definecolor{uciSand}{HTML}{EED8A0}
-
-\setbeamercolor{normal text}{fg=uciNavy, bg=uciCream}
-\setbeamercolor{alerted text}{fg=uciAmber}
-\setbeamercolor{example text}{fg=uciBlue}
-\setbeamercolor{frametitle}{fg=uciNavy, bg=uciGoldPale}
-\setbeamercolor{title separator}{fg=uciGold}
-\setbeamercolor{progress bar}{fg=uciGold, bg=uciSand}
-\setbeamercolor{progress bar in head/foot}{fg=uciGold, bg=uciSand}
-\setbeamercolor{progress bar in section page}{fg=uciGold, bg=uciSand}
-\setbeamercolor{block title}{fg=uciNavy, bg=uciSand}
-\setbeamercolor{block body}{fg=uciNavy, bg=uciGoldPale}
-\setbeamercolor{block title alerted}{fg=white, bg=uciAmber}
-\setbeamercolor{block body alerted}{fg=uciNavy, bg=uciAmber!20}
-\setbeamercolor{block title example}{fg=white, bg=uciBlue}
-\setbeamercolor{block body example}{fg=uciNavy, bg=uciBlue!12}
-\setbeamercolor{palette primary}{fg=uciCream, bg=uciNavy}
+% Default UCI / HIE Lab theme (palette + UCI logo + gold footer bar).
+\input{uci-theme.tex}
 
 \title{Phase Interpolators}
 \subtitle{From I/Q First Principles to SerDes \& Beam Steering}
