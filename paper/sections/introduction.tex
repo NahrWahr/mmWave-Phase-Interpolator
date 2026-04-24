@@ -1,0 +1,22 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Phase interpolators (PIs) are a critical building block in high-speed serial
+links and mm-wave clock generation circuits, providing fine-grained phase
+selection between a set of reference phases. At millimeter-wave frequencies
+(\SIrange{30}{300}{\giga\hertz}), the design of PIs is challenged by the
+reduced transconductance efficiency of transistors, increased sensitivity to
+parasitic capacitances, and tight timing margins.
+
+A common technique to ease these constraints is frequency doubling: the
+phase interpolation is performed at a sub-harmonic (typically \(f_0/2\)) and
+the output is then frequency-doubled to the target mm-wave frequency. This
+relaxes the bandwidth requirement on the interpolating core and allows the
+use of lower-speed, more linear combining topologies.
+
+The remainder of this paper is organized as follows.
+Section~\ref{sec:architecture} describes the top-level architecture.
+Section~\ref{sec:circuit} details the transistor-level implementation.
+Section~\ref{sec:analysis} provides a theoretical analysis of phase
+resolution and nonlinearity. Section~\ref{sec:simulation} presents simulation
+results, and Section~\ref{sec:conclusion} concludes the paper.

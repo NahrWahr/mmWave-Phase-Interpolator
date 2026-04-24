@@ -1,0 +1,58 @@
+% v1.0
+\documentclass[10pt, conference]{IEEEtran}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{circuitikz}
+\usepackage{booktabs}
+\usepackage{microtype}
+
+\title{A mm-Wave Phase Interpolator Based on Frequency Doubling}
+
+\author{%
+  \IEEEauthorblockN{Rahul Narwar}
+  \IEEEauthorblockA{%
+    \textit{HIE Lab}\\
+    \textit{University of California, Irvine}\\
+    \texttt{rnarwar@uci.edu}
+  }
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  This paper presents the design and analysis of a millimeter-wave (mm-wave)
+  phase interpolator architecture based on frequency doubling. By operating
+  the core interpolation circuitry at half the output frequency, the design
+  relaxes speed requirements on the interpolating cells while maintaining
+  fine phase resolution at mm-wave frequencies.
+\end{abstract}
+
+\begin{IEEEkeywords}
+  phase interpolator, mm-wave, frequency doubling, phase-locked loop,
+  clock generation, 5G
+\end{IEEEkeywords}
+
+\input{sections/introduction}
+\input{sections/architecture}
+\input{sections/circuit}
+\input{sections/analysis}
+\input{sections/simulation}
+\input{sections/conclusion}
+
+% Uncomment when \cite{} calls are added:
+%\bibliographystyle{IEEEtran}
+%\bibliography{references}
+
+\end{document}

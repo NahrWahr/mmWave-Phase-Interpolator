@@ -1,18 +1,26 @@
-.PHONY: build-paper build-presentation clean-paper clean-presentation \
-        push-paper push-presentation pull-paper pull-presentation
+# v1.0
+.PHONY: all presentation paper clean push-paper push-presentation \
+        pull-paper pull-presentation
 
-# ── Build (run from the paper or presentation branch) ────────────────────────
-build-paper:
-	latexmk -pdf main.tex
+OUTDIR := output
 
-build-presentation:
-	latexmk -pdf main.tex
+all: presentation paper
 
-clean-paper:
-	latexmk -C main.tex
+$(OUTDIR):
+	mkdir -p $(OUTDIR)
 
-clean-presentation:
-	latexmk -C main.tex
+presentation: $(OUTDIR)
+	latexmk -cd -pdf presentation/main.tex
+	cp presentation/main.pdf $(OUTDIR)/presentation.pdf
+
+paper: $(OUTDIR)
+	latexmk -cd -pdf paper/main.tex
+	cp paper/main.pdf $(OUTDIR)/paper.pdf
+
+clean:
+	latexmk -cd -C presentation/main.tex
+	latexmk -cd -C paper/main.tex
+	rm -rf $(OUTDIR)
 
 # ── Overleaf push ─────────────────────────────────────────────────────────────
 push-paper:

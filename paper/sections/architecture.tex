@@ -1,0 +1,72 @@
+\section{Architecture}
+\label{sec:architecture}
+
+The top-level system is shown in Fig.~\ref{fig:arch}. A \SI{35}{\giga\hertz}
+reference is delivered via wirebond, buffered, and split into two quadrature
+paths by a reflection-based $90^\circ$ coupler. The direct (in-phase) output
+of the coupler provides the $x$-phase input to the current-mode phase
+interpolator (CMPI), while the coupler output passes through a transmission
+line to introduce the orthogonal $y$-phase. The CMPI produces an interpolated
+phase $\phi_\mathrm{PI}$ at \SI{35}{\giga\hertz}, which is then doubled to
+\SI{70}{\giga\hertz} by a $\times 2$ frequency multiplier. To suppress
+free-running noise beyond the locking bandwidth, a direct \SI{35}{\giga\hertz}
+injection path locks the doubler to the reference.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+    scale=0.82, transform shape,
+    auto, thick,
+    block/.style={rectangle, draw, fill=blue!10, text width=2.5cm,
+                  text centered, rounded corners, minimum height=1.5cm},
+    smallblock/.style={rectangle, draw, fill=green!10, text width=1.5cm,
+                       text centered, minimum height=1cm},
+    line/.style={draw, -{Latex[length=2.5mm]}}
+]
+    \node (wirebond) [text width=2cm, text centered]
+        {Wirebond Input \\ ($f_{in}=35\,\mathrm{G}$)};
+    \node (buffer)   [smallblock, right=1cm of wirebond] {Buffer};
+    \node (coupler)  [block, right=1.2cm of buffer]
+        {$90^\circ$ Coupler \\ (Refl.\ Based)};
+    \node (tline)    [block, right=1.2cm of coupler] {Transmission Line};
+    \node (cmpi)     [block, right=1.5cm of tline]   {CM Phase Interpolator};
+    \node (doubler)  [block, right=1.2cm of cmpi]
+        {Freq Doubler \\ ($N=2$)};
+    \node (output)   [text width=2cm, text centered, right=1cm of doubler]
+        {Clock Output ($f_{out}=70\,\mathrm{G}$)};
+
+    \path [line] (wirebond) -- node[above] {$\mathcal{L}_{in}$} (buffer);
+
+    \coordinate (split0) at ([xshift=0.5cm]buffer.east);
+    \draw [line] (buffer.east) -- (split0) -- (coupler.west);
+
+    \coordinate (split1) at ([xshift=0.5cm]coupler.east);
+    \draw [line] (coupler.east) -- (split1) -- (tline.west);
+
+    \coordinate (high_y) at ([yshift=1.4cm]split1);
+    \coordinate (mid_x)  at ([xshift=-0.5cm, yshift=3mm]cmpi.west);
+    \draw [line] (split1) -- (high_y) -| (mid_x)
+        -- node[above] {$x\;(\phi_x)$} ([yshift=3mm]cmpi.west);
+
+    \coordinate (tline_out) at ([xshift=0.5cm]tline.east);
+    \coordinate (mid_y) at ([xshift=-0.5cm, yshift=-3mm]cmpi.west);
+    \draw [line] (tline.east) -- (tline_out) |- (mid_y)
+        -- node[below] {$y\;(\phi_y)$} ([yshift=-3mm]cmpi.west);
+
+    \path [line] (cmpi) -- node[above]{$\phi_{PI}$}
+                            node[below]{$\mathcal{L}_{PI}$} (doubler);
+    \path [line] (doubler) -- node[above]{$\Phi_{out}$}
+                              node[below]{$\mathcal{L}_{out}$} (output);
+
+    \coordinate (inj_path) at ([yshift=-1.2cm]tline.south);
+    \draw [-{Latex[length=2.5mm]}, dashed, red, thick]
+        (split0) |- (inj_path)
+        -- node[below, text=black] {35\,G Injection}
+        (inj_path -| doubler.south) -- (doubler.south);
+\end{tikzpicture}
+\caption{Top-level \SI{70}{\giga\hertz} clock generation architecture.
+         The CMPI operates at \SI{35}{\giga\hertz}; a $\times 2$ doubler
+         produces the mm-wave output. Direct injection locking suppresses
+         doubler free-running noise.}
+\label{fig:arch}
+\end{figure*}

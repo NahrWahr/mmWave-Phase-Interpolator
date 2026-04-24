@@ -1,27 +1,15 @@
-# LaTeX build artefacts
+# LaTeX build artifacts
 *.aux
 *.bbl
-*.bcf
 *.blg
 *.fdb_latexmk
 *.fls
 *.log
-*.out
-*.run.xml
-*.synctex.gz
-*.toc
 *.nav
+*.out
 *.snm
-*.vrb
-*.xdv
-_minted-*/
+*.toc
+*.synctex.gz
 
-# Python / uv
-.venv/
-__pycache__/
-*.pyc
-.python-version
-
-# Editor
-.vscode/
-.idea/
+# Compiled output directory (PDFs committed alongside source)
+output/
