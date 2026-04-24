@@ -348,36 +348,61 @@
     \begin{column}{0.55\linewidth}
       \centering
       \fitwidth[\linewidth]{%
-      \begin{tikzpicture}[scale=0.95, thick, font=\scriptsize]
-        \foreach \i in {0,1,2,3,4} {
-          \draw[fill=uciSand, draw=uciNavy] (\i*0.8, 0)
-              rectangle ++(0.5, 0.3);
-          \node[font=\tiny, uciNavy] at (\i*0.8+0.25,-0.2) {ant \i};
-        }
-        \draw[<->, uciAmber] (0.25,0.55) -- (1.05,0.55)
-            node[midway, above]{$d$};
+      \begin{tikzpicture}[thick, font=\scriptsize,
+          ant/.style={fill=uciSand, draw=uciNavy,
+                      minimum width=0.55cm, minimum height=0.3cm,
+                      inner sep=0pt}]
+        \def\steer{32}      % beam angle from broadside (degrees)
+        \def\dx{1.1}        % element spacing (cm)
 
-        \def\steer{30}
+        % ── Antenna array on baseline ──────────────────────────────────
+        \foreach \i in {0,1,2,3,4} {
+          \node[ant] (a\i) at (\i*\dx, 0) {};
+          \node[font=\tiny, uciNavy] at (\i*\dx, -0.42) {ant \i};
+        }
+        \draw[<->, uciAmber] (0,0.42) -- (\dx,0.42)
+            node[midway, above, font=\tiny]{$d$};
+
+        % ── Broadside reference (vertical dashed) ──────────────────────
+        \draw[dashed, gray!70] (2*\dx, 0.2) -- (2*\dx, 3.2);
+        \node[gray!70, font=\tiny] at (2*\dx + 0.55, 3.0) {broadside};
+
+        % ── Beam direction at angle steer from broadside ───────────────
         \draw[->, uciBlue, very thick]
-            (2.0,1.0) -- ++({\steer}:2.5)
-            node[above right]{wavefront $\theta$};
+            (2*\dx, 0.2) -- ++({90-\steer}:3.0)
+            node[above right, uciBlue]{beam};
 
-        \foreach \i in {0,1,2,3,4} {
-          \draw[uciBlue!50, dashed]
-            (\i*0.8+0.25, 0.3) -- ++({90+\steer}:2.0);
-        }
+        % ── θ angle marker between broadside and beam ──────────────────
+        \draw[uciBlue, thick]
+            (2*\dx, 0.2) ++(90:1.1) arc (90:90-\steer:1.1);
+        \node[uciBlue] at ({2*\dx + 0.32}, 1.55) {$\theta$};
 
-        \draw[<->, red, thick] (0.25,2.6) -- ++({90-\steer}:0.8);
-        \node[red, right=2pt] at (0.55,2.9) {$d\sin\theta$};
+        % ── Two wavefronts (perpendicular to beam), through ant 0/ant 1
+        \draw[uciBlue!55, dashed]
+            (a0.center) ++({180-\steer}:1.0)
+            -- ($(a0.center) + ({-\steer}:3.0)$);
+        \draw[uciBlue!55, dashed]
+            (a1.center) ++({180-\steer}:1.0)
+            -- ($(a1.center) + ({-\steer}:3.0)$);
 
-        \node[uciNavy, font=\scriptsize] at (3.0,-0.9)
-          {progressive delay $\Delta t = (d\sin\theta)/c$};
-        \node[uciNavy, font=\scriptsize] at (3.0,-1.3)
-          {$\Rightarrow$ progressive phase
+        % ── Path-length difference d sin θ between the two wavefronts ──
+        % From ant 1, drop perpendicular onto wavefront through ant 0.
+        % Foot lies at ant 1 - (d sinθ) * (beam direction).
+        \coordinate (foot) at
+            ($(a1.center) + ({90-\steer+180}:{\dx*sin(\steer)})$);
+        \draw[<->, red, very thick] (a1.center) -- (foot)
+            node[midway, right=1pt, red, font=\scriptsize]
+              {$d\sin\theta$};
+
+        % ── Caption below ──────────────────────────────────────────────
+        \node[uciNavy, font=\scriptsize, align=center]
+          at (2*\dx, -1.05)
+          {extra path/element $= d\sin\theta$
+           $\;\Rightarrow\;$
            $\Delta\phi = \tfrac{2\pi d}{\lambda}\sin\theta$};
 
         \node[draw=uciNavy, fill=uciGoldPale, rounded corners,
-              font=\tiny, align=center] at (5.5,1.3)
+              font=\tiny, align=center] at (5.7, 2.4)
           {one PI per element\\ provides $\Delta\phi$};
       \end{tikzpicture}}
     \end{column}
