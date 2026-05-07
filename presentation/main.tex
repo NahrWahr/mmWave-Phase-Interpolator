@@ -1,494 +1,511 @@
-% v1.0 — 2026-04-24 weekly deck: PI fundamentals & applications
+% v1.0 — 2026-05-04 weekly deck: prior-art baseline comparison & gap analysis
 \documentclass[10pt, aspectratio=169]{beamer}
-
 \usetheme{moloch}
 
 \usepackage[T1]{fontenc}
 \usepackage{amsmath, amssymb}
 \usepackage{graphicx}
 \usepackage{siunitx}
+\sisetup{range-phrase={--}, range-units=single}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, decorations.pathreplacing, patterns}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
+\input{uci-theme.tex}
 \usepackage{pgfplots}
-\pgfplotsset{compat=1.18}
+\pgfplotsset{
+  compat=1.18,
+  every axis/.append style={
+    tick label style={font=\tiny,       color=uciNavy},
+    label style     ={font=\scriptsize, color=uciNavy},
+    axis line style ={draw=uciNavy!60},
+    grid=both,
+    grid style={line width=0.3pt, draw=uciNavy!20},
+  },
+}
 \usepackage{booktabs}
 \usepackage{microtype}
 
-% Default UCI / HIE Lab theme (palette + UCI logo + gold footer bar).
-\input{uci-theme.tex}
+\newcommand{\fitwidth}[2][0.95\linewidth]{\resizebox{#1}{!}{#2}}
+\input{../figures-lib.tex}
+\figstyle{slides}
+\AtBeginSection{\frame[noframenumbering]{\sectionpage}}
 
-\title{Phase Interpolators}
-\subtitle{From I/Q First Principles to SerDes \& Beam Steering}
+\title{mm-Wave Phase Control}
+\subtitle{Prior-art baseline comparison and gap analysis}
 \author{Rahul Narwar}
-\date{2026-04-24}
+\date{2026-05-04}
 \institute{HIE Lab, University of California, Irvine}
 
-\newcommand{\fitwidth}[2][0.95\linewidth]{\resizebox{#1}{!}{#2}}
-
 \begin{document}
-
 \maketitle
 
-% ════════════════════════════════════════════════════════════════════════════
-\section{First Principles}
-% ════════════════════════════════════════════════════════════════════════════
-
-\begin{frame}{What is a Phase Interpolator?}
-  \begin{columns}[T]
-    \begin{column}{0.46\linewidth}
-      A circuit that produces a clock at \alert{any phase between two
-      reference phases} by taking a weighted sum.
-
-      \medskip
-      \begin{itemize}
-        \item \textbf{Inputs:} two reference clocks, same frequency,
-              known phase offset (typically $90^\circ$ apart — I and Q)
-        \item \textbf{Control:} digital code $\to$ analog weights
-              $(\alpha, \beta)$
-        \item \textbf{Output:} one clock with phase
-              $\phi \in [\phi_I, \phi_Q]$, same frequency
-      \end{itemize}
-
-      \medskip
-      No frequency synthesis, no PLL — \emph{just controlled mixing of
-      two phases}.
-    \end{column}
-    \begin{column}{0.52\linewidth}
-      \centering
-      \fitwidth[\linewidth]{%
-      \begin{tikzpicture}[scale=0.9, transform shape, thick, font=\small,
-          port/.style={inner sep=1pt}]
-        \draw[rounded corners, fill=uciSand, draw=uciNavy, thick]
-            (0,0) rectangle (4.0,3.0);
-        \node[uciNavy] at (2,2.6) {\textbf{Phase Interpolator}};
-        \node[uciNavy, font=\scriptsize] at (2,2.0)
-            {$v_{out}=\alpha\,v_I + \beta\,v_Q$};
-
-        \draw[->, uciNavy] (-1.6,2.2) node[port,left]
-            {$v_I=\cos\omega t$} -- (0,2.2);
-        \draw[->, uciNavy] (-1.6,0.8) node[port,left]
-            {$v_Q=\sin\omega t$} -- (0,0.8);
-        \draw[->, uciNavy] (4.0,1.5) -- (5.7,1.5) node[port,right]
-            {$v_{out}$};
-
-        \draw[->, uciAmber, very thick] (2,-0.7) node[below, uciNavy]
-            {control code $D$} -- (2,0);
-
-        \draw[->, uciBlue, thick]
-            (5.7,1.0) .. controls (6.6,0.5) and (6.6,2.5) .. (5.7,2.0);
-        \node[uciBlue, font=\scriptsize] at (6.9,1.5) {$\phi(D)$};
-      \end{tikzpicture}}
-
-      \vspace{4mm}
-      \small\emph{Black box: 2 phases in, 1 phase out, code controls where.}
-    \end{column}
-  \end{columns}
+% ── Architecture context ───────────────────────────────────────────────────
+\begin{frame}{Architecture Context}
+\begin{columns}[T]
+  \begin{column}{0.52\linewidth}
+    \textbf{This work:} \SI{35}{\giga\hertz} half-rate PI\,$\rightarrow$\,$\times2$
+    doubler\,$\rightarrow$\,\SI{70}{\giga\hertz}\\[1ex]
+    Phase-error doubling rule:
+    \[
+      \epsilon_{\Phi,70} = 2\,\epsilon_{\phi,35}
+    \]
+    {\small Phase noise $+6\,\mathrm{dB}$ ($20\log_{10}2$); absolute jitter preserved.}
+  \end{column}
+  \begin{column}{0.44\linewidth}
+    \begin{block}{Baseline families — 8 works}
+    \begin{itemize}\small
+      \item Active vector-modulator PS (15--90~GHz)
+      \item Passive RTPS (28~GHz)
+      \item Passive switched APN (14--50~GHz)
+      \item Passive PI in T/R channels (W-band)
+    \end{itemize}
+    \end{block}
+  \end{column}
+\end{columns}
 \end{frame}
 
-\begin{frame}{First Principles — I/Q Weighted Sum}
-  \textbf{Given two orthogonal clocks at $\omega$:}
-  \[
-    v_I(t) = A\cos\omega t,\qquad
-    v_Q(t) = A\sin\omega t.
-  \]
+% ── Section 1 ──────────────────────────────────────────────────────────────
+\section{Quantitative Metrics}
 
-  \textbf{Take a weighted sum} with real weights $\alpha, \beta$:
-  \[
-    v_{out}(t) = \alpha\,v_I(t) + \beta\,v_Q(t)
-               = A\bigl[\alpha\cos\omega t + \beta\sin\omega t\bigr].
-  \]
-
-  \textbf{Apply the harmonic-addition identity}
-  $a\cos\theta + b\sin\theta = R\cos(\theta-\phi)$ with
-  $R=\sqrt{a^2+b^2}$, $\tan\phi = b/a$:
-  \[
-    \boxed{\;
-      v_{out}(t)
-        = A\sqrt{\alpha^2+\beta^2}\;
-          \cos\!\left(\omega t - \phi\right),
-      \quad
-      \phi = \arctan\!\frac{\beta}{\alpha}.
-    \;}
-  \]
-
-  \begin{block}{Takeaway}
-    The output \emph{frequency} is unchanged. The output \emph{phase}
-    is set entirely by the weight ratio $\beta/\alpha$ — sweep the
-    weights, sweep the phase from $0^\circ$ (pure I) to $90^\circ$
-    (pure Q).
-  \end{block}
+% ── Phase Accuracy Table ───────────────────────────────────────────────────
+\begin{frame}{Phase Accuracy}
+\vspace{-0.5ex}
+{\scriptsize
+\fitwidth{%
+\begin{tabular}{@{}lrrrllr@{}}
+\toprule
+Work & $f_0$ (GHz) & FBW (\%) & Bits & LSB ($^\circ$)
+     & $\epsilon_\mathrm{rms}$ ($^\circ$) & $\epsilon$/LSB \\
+\midrule
+Qiu et al.\ 2021    & 26.5 & 86.8  & 6 &  5.63
+  & 2.23--3.5                         & 0.40--0.62 \\
+Pepe/Zito PS1        & 85.8 & 16.3  & 4 & 22.5
+  & ${<}\,11.9$                        & ${<}\,0.53$ \\
+Pepe/Zito PS2        & 88.5 & 18.8  & 4 & 22.5
+  & ${<}\,11.9$                        & ${<}\,0.53$ \\
+Yu et al.\ 2016     & 60.5 & 11.6  & 4 & 22.5
+  & 2.3--7.6$^{\,a}$                   & 0.10--0.34 \\
+Afroz et al.\ Rx    & 96.0 &  8.3  & 4 & 22.5
+  & ${<}\,6$                           & ${<}\,0.27$ \\
+Afroz et al.\ Tx    & 95.0 & 21.1  & 4 & 22.5
+  & ${<}\,1.5\,/\,{<}\,8$\,$^{\,b}$   & ${<}\,0.07\,/\,{<}\,0.36$ \\
+Garg/Natarajan       & 28.0 & 14.3  & 5 & 11.25
+  & ${<}\,1$                           & ${<}\,0.089$ \\
+Anjos et al.\ 2020  & 32.0 & 112.5 & 2 & 45
+  & 3.6\,/\,5.9$^{\,c}$               & 0.08\,/\,0.13 \\
+\bottomrule
+\end{tabular}%
+}%
+}\\[0.4ex]
+{\tiny
+  ${}^a$After calibration.\quad
+  ${}^b$${<}\,8^\circ$ near Tx saturation.\quad
+  ${}^c$At \SI{28}{\giga\hertz} / \SI{39}{\giga\hertz}.
+}
 \end{frame}
 
-\begin{frame}{Phasor View — Watching $\phi$ Move}
-  \begin{columns}[T]
-    \begin{column}{0.55\linewidth}
-      \centering
-      \begin{tikzpicture}[>=latex, scale=1.3, thick, font=\scriptsize]
-        \draw[gray!20, step=0.5] (-0.3,-0.3) grid (2.3,2.3);
-        \draw[->, gray!70] (-0.3,0) -- (2.4,0) node[right, black]
-            {$I$ axis ($\cos\omega t$)};
-        \draw[->, gray!70] (0,-0.3) -- (0,2.4) node[above, black]
-            {$Q$ axis ($\sin\omega t$)};
-        \draw[dashed, uciBlue!40] (0,0) -- (2,0)
-            node[pos=0.5, below, uciBlue] {$\alpha$};
-        \draw[dashed, uciBlue!40] (2,0) -- (2,1.4)
-            node[pos=0.5, right, uciBlue] {$\beta$};
-
-        \draw[->, ultra thick, uciBlue] (0,0) -- (2,0)
-            node[below right] {$\alpha\,\hat I$};
-        \draw[->, ultra thick, uciAmber] (0,0) -- (0,1.4)
-            node[left] {$\beta\,\hat Q$};
-        \draw[->, ultra thick, uciNavy] (0,0) -- (2,1.4)
-            node[above right] {$v_{out}$};
-
-        \draw[->, thick, uciNavy] (0.6,0) arc (0:35:0.6)
-            node[midway, right=4pt, yshift=2pt] {$\phi$};
-
-        \draw[dashed, uciAmber!60] (0,0) circle (2.44);
-        \node[uciAmber, font=\tiny, anchor=west]
-            at (1.7,2.05) {$|v_{out}|=\sqrt{\alpha^2+\beta^2}$};
-      \end{tikzpicture}
-    \end{column}
-    \begin{column}{0.43\linewidth}
-      \textbf{Geometry = algebra:}
-      \begin{itemize}
-        \item $\alpha$ slides the tip along $I$
-        \item $\beta$ slides the tip along $Q$
-        \item Tip's polar angle \emph{is} $\phi$
-      \end{itemize}
-
-      \medskip
-      \textbf{Two knobs:}
-      \begin{itemize}\setlength\itemsep{2pt}
-        \item \alert{Quadrant select} (coarse) — pick two of
-              $\{I, Q, \overline{I}, \overline{Q}\}$ for $360^\circ$
-              coverage
-        \item \alert{Weight ratio} (fine) — $N$-bit DAC on
-              $\beta/\alpha$ gives $2^N$ steps per quadrant
-      \end{itemize}
-    \end{column}
-  \end{columns}
+% ── Power / Gain / Noise Table ─────────────────────────────────────────────
+\begin{frame}{Power, Gain, and Noise}
+\vspace{-0.5ex}
+{\scriptsize
+\fitwidth{%
+\begin{tabular}{@{}lllrll@{}}
+\toprule
+Work & Architecture & Gain / IL (dB) & DC Power
+     & NF (dB) & $P_{1\mathrm{dB}}$ (dBm) \\
+\midrule
+Qiu'21     & Active VM       & active gain        & \SI{19.2}{\milli\watt}
+  & ---         & --- \\
+Pepe PS1   & Active VM       & $+2.3$             & \SI{21.6}{\milli\watt}
+  & 10.8        & $-7$ \\
+Pepe PS2   & Active VM       & $+0.83$            & \SI{21.6}{\milli\watt}
+  & 11.9        & $-6$ \\
+Yu'16      & Active VM       & $-0.4$ to $+2.5$   & \SI{19.8}{\milli\watt}
+  & $11\pm1.3$  & $-9.8$ \\
+Afroz Rx   & Passive PI (Rx) & $+17$ to $+23$     & \SI{18}{\milli\watt}
+  & 5.8--6.6    & $-31$ \\
+Afroz Tx   & Passive PI (Tx) & $+7.5$ to $+12$    & \SIrange{26}{50}{\milli\watt}
+  & ---         & --- \\
+Garg'17    & Passive RTPS    & $-7.75$            & $0^{\,d}$
+  & ${<}\,5.5$  & $-22$ \\
+Anjos'20   & Passive APN     & $-7.4$ to $-10$    & 0 (passive)
+  & ---         & --- \\
+\bottomrule
+\end{tabular}%
+}%
+}\\[0.4ex]
+{\tiny
+  ${}^d$RTPS zero dc; full Rx front end \SI{10}{\milli\watt} (LNA included).
+}
 \end{frame}
 
-\begin{frame}{Practical Realization — A Visual Sketch}
-  \centering
-  \begin{tikzpicture}[scale=0.95, transform shape, thick, font=\small,
-      box/.style={rectangle, draw=uciNavy, fill=uciSand, rounded corners,
-                  minimum width=1.5cm, minimum height=0.9cm, align=center}]
-    \node[box] (idac) at (0,2)   {$\alpha$-DAC\\$N$-bit};
-    \node[box] (qdac) at (0,0)   {$\beta$-DAC\\$N$-bit};
-    \node[box, fill=uciGoldPale] (mixI) at (3.2,2) {weight\\$v_I$};
-    \node[box, fill=uciGoldPale] (mixQ) at (3.2,0) {weight\\$v_Q$};
-    \node[circle, draw=uciNavy, fill=uciAmber!30, minimum size=0.9cm]
-         (sum) at (6.0,1) {$+$};
-    \node[box, fill=uciBlue!15] (lim) at (8.6,1) {limiter /\\buffer};
-    \node[right=0.5cm of lim, uciNavy] (out) {$v_{out}(\phi)$};
+% ── Section 2 ──────────────────────────────────────────────────────────────
+\section{Visual Analysis}
 
-    \draw[->, uciNavy] (idac.east) -- (mixI.west);
-    \draw[->, uciNavy] (qdac.east) -- (mixQ.west);
-    \draw[->, uciNavy] (mixI.east) -| (sum.north);
-    \draw[->, uciNavy] (mixQ.east) -| (sum.south);
-    \draw[->, uciNavy] (sum.east) -- (lim.west);
-    \draw[->, uciNavy] (lim.east) -- (out);
-
-    \draw[->, uciBlue, thick] (-2.0,2) node[left]{$v_I$} -- (mixI.west);
-    \draw[->, uciAmber, thick] (-2.0,0) node[left]{$v_Q$} -- (mixQ.west);
-
-    \node[font=\scriptsize, uciNavy, align=center] at (3.2,-1.2)
-      {CML pair with\\ tail current $\propto$ weight};
-    \node[font=\scriptsize, uciNavy, align=center] at (6.0,-0.4)
-      {current sum at\\ load resistor};
-    \node[font=\scriptsize, uciNavy, align=center] at (8.6,-0.4)
-      {restores square\\ edges};
+% ── Scatter 1: Phase Error vs Center Frequency ────────────────────────────
+\begin{frame}{Phase Error vs.\ Center Frequency}
+\begin{columns}[T]
+  \begin{column}{0.70\linewidth}
+  \begin{tikzpicture}
+  \begin{axis}[
+    width=\linewidth, height=5.9cm,
+    xlabel={$f_0$ (GHz)},
+    ylabel={$\epsilon_\mathrm{rms}$ ($^\circ$)},
+    xmin=5, xmax=115,
+    ymin=0, ymax=14,
+    xtick={20,40,60,80,100},
+    ytick={0,2,4,6,8,10,12,14},
+    clip=false,
+  ]
+  % Active VM — filled circle, uciBlue
+  \addplot[only marks, mark=*,
+           mark options={fill=uciBlue, draw=uciBlue, scale=1.2}]
+    coordinates { (26.5,2.9) (85.8,9.4) (88.5,11.2) (60.5,5.0)
+                  (77.3,2.2) (60.5,1.4) (27.5,0.58) };
+  % Passive PI ch. — filled triangle, uciNavy
+  \addplot[only marks, mark=triangle*,
+           mark options={fill=uciNavy, draw=uciNavy, scale=1.2}]
+    coordinates { (96.0,3.5) (95.0,1.5) };
+  % Passive PS — filled square, uciAmber
+  \addplot[only marks, mark=square*,
+           mark options={fill=uciAmber, draw=uciAmber, scale=1.1}]
+    coordinates { (28.0,0.3) (32.0,3.6) };
+  % Projection — hollow diamond, uciAmber border
+  \addplot[only marks, mark=diamond,
+           mark options={fill=uciCream, draw=uciAmber, line width=1.2pt, scale=1.7}]
+    coordinates { (70.0,5.8) };
+  % Pepe PS1 reference line (dashed)
+  \addplot[dashed, color=uciAmber!80!black, thin]
+    coordinates { (5,9.4) (115,9.4) };
+  % Point labels
+  \node[font=\tiny, anchor=south west] at (axis cs:26.5, 2.9) {Qiu'21};
+  \node[font=\tiny, anchor=north east] at (axis cs:85.8, 9.4) {Pepe PS1};
+  \node[font=\tiny, anchor=south west] at (axis cs:88.5,11.2) {Pepe PS2};
+  \node[font=\tiny, anchor=south west] at (axis cs:60.5, 5.0) {Yu'16};
+  \node[font=\tiny, anchor=south east, xshift=-5pt]
+    at (axis cs:96.0, 3.5) {Afroz Rx};
+  \node[font=\tiny, anchor=north west, xshift= 5pt]
+    at (axis cs:95.0, 1.5) {Afroz Tx};
+  \node[font=\tiny, anchor=south east] at (axis cs:28.0, 0.3) {Garg'17};
+  \node[font=\tiny, anchor=north west] at (axis cs:32.0, 3.6) {Anjos'20};
+  \node[font=\tiny, anchor=south west] at (axis cs:70.0, 5.8)
+    {$2{\times}$Qiu proj.};
+  \node[font=\tiny, anchor=east, text=uciAmber!80!black]
+    at (axis cs:115, 9.6) {Pepe PS1 bound};
+  \node[font=\tiny, anchor=south east] at (axis cs:77.3, 2.2) {Jiang'25};
+  \node[font=\tiny, anchor=north west] at (axis cs:60.5, 1.4) {Wang'18};
+  \node[font=\tiny, anchor=north east] at (axis cs:27.5, 0.58){KAIST'25};
+  \end{axis}
   \end{tikzpicture}
-
-  \vspace{6mm}
-  \small Two CML (current-mode logic) differential pairs share a load.
-  Tail-current ratio $I_\alpha : I_\beta$ \emph{is} the weight ratio
-  $\alpha : \beta$. Sum is taken in the current domain — naturally
-  linear, fast, and low-glitch.
+  \end{column}
+  \begin{column}{0.27\linewidth}
+  \vspace{2ex}
+  {\scriptsize
+  {\color{uciBlue}$\bullet$}\enspace Active VM\\[0.9ex]
+  {\color{uciNavy}$\blacktriangle$}\enspace Passive PI ch.\\[0.9ex]
+  {\color{uciAmber}$\blacksquare$}\enspace Passive PS\\[0.9ex]
+  \tikz[baseline=-1.5pt]\draw[fill=uciCream,draw=uciAmber,line width=1.2pt](0,4pt)--(5pt,0pt)--(0,-4pt)--(-5pt,0pt)--cycle;\enspace Projection ($\times2$)
+  }\\[2ex]
+  {\tiny
+    $\epsilon_{\Phi,70}=2\epsilon_{\phi,35}$, ideal doubling,
+    from Qiu'21 mid-band.\\[3pt]
+    Dashed = Pepe PS1 center-frequency error.
+  }
+  \end{column}
+\end{columns}
 \end{frame}
 
-% ════════════════════════════════════════════════════════════════════════════
-\section{Applications}
-% ════════════════════════════════════════════════════════════════════════════
-
-\begin{frame}{Application 1 — Wireline / SerDes CDR}
-  \begin{columns}[T]
-    \begin{column}{0.5\linewidth}
-      \textbf{Problem.} Receiver gets serial data with no clock. Local
-      reference clock is at the right \emph{frequency} but unknown
-      \emph{phase}.
-
-      \medskip
-      \textbf{PI's job.} Slide the sampling clock until it lands in the
-      \emph{centre of the data eye} — and keep it there as the link
-      drifts.
-      \[
-        \phi_{samp}
-          = \tfrac{1}{2}\bigl(\phi_{rise}+\phi_{fall}\bigr)
-      \]
-
-      \begin{block}{Why a PI?}
-        Resolution of $360^\circ/2^N$ at multi-GHz rates with no PLL in
-        the loop. A bang-bang phase detector dithers the PI code
-        $\pm 1$ LSB at lock — the entire CDR loop is digital after the
-        sampler.
-      \end{block}
-    \end{column}
-    \begin{column}{0.48\linewidth}
-      \centering
-      \begin{tikzpicture}[scale=1.0, font=\scriptsize, thick]
-        \draw[->, gray] (-0.2,0) -- (5.5,0) node[right, black]{$t$};
-        \draw[->, gray] (0,-1.3) -- (0,1.3);
-
-        \foreach \x in {0,2,4} {
-          \draw[uciBlue, thick]
-            (\x,1) -- (\x+0.2,1) -- (\x+0.3,-1) -- (\x+1.7,-1)
-            -- (\x+1.8,1) -- (\x+2,1);
-          \draw[uciBlue, thick, opacity=0.5]
-            (\x,-1) -- (\x+0.2,-1) -- (\x+0.3,1) -- (\x+1.7,1)
-            -- (\x+1.8,-1) -- (\x+2,-1);
-        }
-        \node[uciBlue, font=\tiny] at (5.0,1.3) {data eye};
-
-        \draw[uciAmber, very thick, dashed] (1.0,-1.2) -- (1.0,1.2)
-            node[above, uciAmber]{too early};
-        \draw[uciAmber, very thick, dashed] (1.95,-1.2) -- (1.95,1.2)
-            node[above, uciAmber]{too late};
-        \draw[red, ultra thick] (1.5,-1.2) -- (1.5,1.2)
-            node[above, red]{\textbf{centre}};
-
-        \draw[<->, uciNavy] (1.05,-1.5) -- (1.95,-1.5)
-            node[midway, below]{slide via PI code $D$};
-      \end{tikzpicture}
-
-      \vspace{2mm}
-      \begin{tikzpicture}[font=\scriptsize, thick]
-        \node[draw, fill=uciSand, rounded corners] (pi) at (0,0)
-            {PI};
-        \node[draw, fill=uciGoldPale, rounded corners,
-              right=0.7 of pi] (smp) {Sampler};
-        \node[draw, fill=uciBlue!15, rounded corners,
-              right=0.7 of smp] (bbpd) {BB-PD};
-        \node[draw, fill=uciAmber!20, rounded corners,
-              below=0.5 of bbpd] (filt) {digital filter};
-
-        \draw[->] (pi) -- (smp);
-        \draw[->] (smp) -- (bbpd);
-        \draw[->] (bbpd) -- (filt);
-        \draw[->] (filt) -| node[pos=0.92, left]{$D$} (pi);
-
-        \node[left=0.3 of pi, font=\tiny] {I/Q ref};
-        \node[above=0.05 of smp, font=\tiny] {data};
-      \end{tikzpicture}
-    \end{column}
-  \end{columns}
+% ── Scatter 2: FBW vs ε/LSB ───────────────────────────────────────────────
+\begin{frame}{Fractional Bandwidth vs.\ $\epsilon_\mathrm{rms}/\mathrm{LSB}$}
+\begin{columns}[T]
+  \begin{column}{0.70\linewidth}
+  \begin{tikzpicture}
+  \begin{axis}[
+    width=\linewidth, height=5.9cm,
+    xlabel={Fractional BW (\%)},
+    ylabel={$\epsilon_\mathrm{rms}$ / LSB},
+    xmin=0, xmax=125,
+    ymin=0, ymax=0.60,
+    xtick={0,20,40,60,80,100,120},
+    ytick={0,0.1,0.2,0.3,0.4,0.5,0.6},
+    clip=false,
+  ]
+  % Active VM
+  \addplot[only marks, mark=*,
+           mark options={fill=uciBlue, draw=uciBlue, scale=1.2}]
+    coordinates { (86.8,0.51) (16.3,0.42) (18.8,0.50) (11.6,0.22)
+                  (14.9,0.52) };
+  % Passive PI ch.
+  \addplot[only marks, mark=triangle*,
+           mark options={fill=uciNavy, draw=uciNavy, scale=1.2}]
+    coordinates { (8.3,0.16) (21.1,0.067) };
+  % Passive PS
+  \addplot[only marks, mark=square*,
+           mark options={fill=uciAmber, draw=uciAmber, scale=1.1}]
+    coordinates { (14.3,0.027) (112.5,0.08) };
+  % Labels
+  \node[font=\tiny, anchor=south west] at (axis cs:86.8,0.51)  {Qiu'21};
+  \node[font=\tiny, anchor=south]      at (axis cs:16.3,0.42)  {Pepe PS1};
+  \node[font=\tiny, anchor=north east] at (axis cs:18.8,0.50)  {Pepe PS2};
+  \node[font=\tiny, anchor=south east] at (axis cs:11.6,0.22)  {Yu'16};
+  \node[font=\tiny, anchor=north west] at (axis cs:8.3, 0.16)  {Afroz Rx};
+  \node[font=\tiny, anchor=north east] at (axis cs:21.1,0.067) {Afroz Tx};
+  \node[font=\tiny, anchor=north west] at (axis cs:14.3,0.027) {Garg'17};
+  \node[font=\tiny, anchor=south east] at (axis cs:112.5,0.08) {Anjos'20};
+  \node[font=\tiny, anchor=south west] at (axis cs:14.9,0.52)  {Wang'18};
+  \end{axis}
+  \end{tikzpicture}
+  \end{column}
+  \begin{column}{0.27\linewidth}
+  \vspace{2ex}
+  {\scriptsize
+  {\color{uciBlue}$\bullet$}\enspace Active VM\\[0.9ex]
+  {\color{uciNavy}$\blacktriangle$}\enspace Passive PI ch.\\[0.9ex]
+  {\color{uciAmber}$\blacksquare$}\enspace Passive PS
+  }\\[2ex]
+  {\tiny
+    Lower-left = narrow BW and high precision.\\[3pt]
+    Active VMs cluster at mid-range $\epsilon$/LSB.\\[3pt]
+    Passive PSs split: high FBW (Anjos) vs.\
+    very low $\epsilon$/LSB (Garg).
+  }
+  \end{column}
+\end{columns}
 \end{frame}
 
-\begin{frame}{Application 2 — Optical Coherent Receivers}
-  \begin{columns}[T]
-    \begin{column}{0.50\linewidth}
-      \textbf{Setting.} 100--800\,Gb/s coherent links: optical front end
-      delivers I/Q baseband into ADCs at \SI{50}{\giga S/s}+.
+% ── Section: Pareto Front ──────────────────────────────────────────────────
+\section{Pareto Front}
 
-      \smallskip
-      \textbf{PI's role:}
-      \begin{itemize}\setlength\itemsep{1pt}
-        \item sets the \emph{ADC sample-clock phase} per lane
-        \item tracks slow TX/RX symbol-clock drift, no analog retuning
-        \item per-lane codes equalise inter-lane skew
-      \end{itemize}
-
-      \begin{alertblock}{Resolution matters}
-        Clock jitter degrades SNR for 16/64-QAM. A $7$-bit PI gives
-        $\Delta\phi \approx 2.8^\circ \approx \SI{80}{\femto\second}$
-        at \SI{100}{\giga\hertz}.
-      \end{alertblock}
-    \end{column}
-    \begin{column}{0.48\linewidth}
-      \centering
-      \fitwidth[\linewidth]{%
-      \begin{tikzpicture}[scale=0.85, transform shape, thick,
-          font=\scriptsize,
-          box/.style={draw=uciNavy, fill=uciSand, rounded corners,
-                      minimum width=1.4cm, minimum height=0.7cm,
-                      align=center}]
-        \node[box] (lo) at (0,3) {laser LO};
-        \node[box] (hyb) at (3,3) {$90^\circ$\\ hybrid};
-        \node[box, fill=uciGoldPale] (adcI) at (6,3.6) {ADC$_I$};
-        \node[box, fill=uciGoldPale] (adcQ) at (6,2.4) {ADC$_Q$};
-        \node[box, fill=uciBlue!15] (dsp) at (9,3) {DSP};
-        \node[box, fill=uciAmber!20] (pi) at (6,0.8) {Phase\\ Interp.};
-        \node[box] (ref) at (3,0.8) {ref clk};
-
-        \draw[->, uciNavy] (-1.6,3.4) node[left]{optical sig.}
-            -- (hyb.west |- 0,3.4);
-        \draw[->, uciNavy] (lo) -- (hyb);
-        \draw[->, uciNavy] (hyb.east |- 0,3.4) -- (adcI.west);
-        \draw[->, uciNavy] (hyb.east |- 0,2.6) -- (adcQ.west);
-        \draw[->, uciNavy] (adcI.east) -- (dsp.west |- 0,3.4);
-        \draw[->, uciNavy] (adcQ.east) -- (dsp.west |- 0,2.6);
-
-        \draw[->, uciAmber, very thick] (ref) -- (pi);
-        \draw[->, uciAmber, very thick] (pi.north) -- (adcQ.south);
-        \draw[->, uciAmber, very thick] (pi.north) -| (adcI.south);
-
-        \draw[->, uciBlue, thick] (dsp.south) |- (pi.east)
-            node[pos=0.7, above]{phase update};
-
-        \node[uciAmber, font=\tiny] at (6,0.05) {sample clk phase};
-      \end{tikzpicture}}
-    \end{column}
-  \end{columns}
+% ── Pareto 1: Phase Error vs DC Power ─────────────────────────────────────
+% Adds Jiang'25 (E-band, 57.2 mW), Wang'18 (60 GHz, 38 mW), KAIST'25 (Ka, 11.3 mW).
+\begin{frame}{Phase Accuracy vs.\ DC Power}
+\begin{columns}[T]
+  \begin{column}{0.70\linewidth}
+  \begin{tikzpicture}
+  \begin{axis}[
+    width=\linewidth, height=5.9cm,
+    xlabel={DC Power (mW)},
+    ylabel={$\epsilon_\mathrm{rms}$ ($^\circ$)},
+    xmin=-2, xmax=65,
+    ymin=0,  ymax=13,
+    xtick={0,10,20,30,40,50,60},
+    ytick={0,2,4,6,8,10,12},
+    clip=false,
+  ]
+  %% Active VM — filled circle, uciBlue
+  \addplot[only marks, mark=*,
+           mark options={fill=uciBlue, draw=uciBlue, scale=1.2}]
+    coordinates { (19.2,2.9) (21.6,9.4) (21.6,11.2) (19.8,5.0)
+                  (57.2,2.2) (38,1.4) (11.3,0.58) };
+  %% Passive PI ch. — filled triangle, uciNavy
+  \addplot[only marks, mark=triangle*,
+           mark options={fill=uciNavy, draw=uciNavy, scale=1.2}]
+    coordinates { (18,3.5) (38,1.5) };
+  %% Passive PS — filled square, uciAmber
+  \addplot[only marks, mark=square*,
+           mark options={fill=uciAmber, draw=uciAmber, scale=1.1}]
+    coordinates { (0,0.3) (0,3.6) };
+  %% New-work labels
+  \node[font=\tiny, anchor=south west] at (axis cs:57.2,2.2)  {Jiang'25};
+  \node[font=\tiny, anchor=north east] at (axis cs:38,  1.4)  {Wang'18};
+  \node[font=\tiny, anchor=south west] at (axis cs:11.3,0.58) {KAIST'25};
+  %% Passive PS labels (at x = 0, need to sit inside chart)
+  \node[font=\tiny, anchor=south west] at (axis cs:0,0.3) {Garg'17};
+  \node[font=\tiny, anchor=south west] at (axis cs:0,3.6) {Anjos'20};
+  %% Afroz labels (share x = 38 with scenarios)
+  \node[font=\tiny, anchor=north east] at (axis cs:19.2, 2.9) {Qiu'21};
+  \node[font=\tiny, anchor=east]       at (axis cs:21.6, 9.4) {Pepe PS1};
+  \node[font=\tiny, anchor=east]       at (axis cs:21.6,11.2) {Pepe PS2};
+  \node[font=\tiny, anchor=south east] at (axis cs:19.8, 5.0) {Yu'16};
+  \node[font=\tiny, anchor=west]       at (axis cs:18,3.5) {Afroz Rx};
+  \node[font=\tiny, anchor=north west] at (axis cs:38,1.5) {Afroz Tx};
+  \end{axis}
+  \end{tikzpicture}
+  \end{column}
+  \begin{column}{0.27\linewidth}
+  \vspace{2ex}
+  {\scriptsize
+  {\color{uciBlue}$\bullet$}\enspace Active VM\\[0.8ex]
+  {\color{uciNavy}$\blacktriangle$}\enspace Passive PI ch.\\[0.8ex]
+  {\color{uciAmber}$\blacksquare$}\enspace Passive PS
+  }\\[1.5ex]
+  {\tiny
+    Garg'17, Anjos'20 at zero dc.\\[3pt]
+    Sub-3$^\circ$ at $>$60~GHz costs $>\!38$~mW
+    (Jiang'25).
+  }
+  \end{column}
+\end{columns}
 \end{frame}
 
-\begin{frame}{Application 3 — Phased-Array Beam Steering}
-  \begin{columns}[T]
-    \begin{column}{0.55\linewidth}
-      \centering
-      \fitwidth[\linewidth]{%
-      \begin{tikzpicture}[thick, font=\scriptsize,
-          ant/.style={fill=uciSand, draw=uciNavy,
-                      minimum width=0.55cm, minimum height=0.3cm,
-                      inner sep=0pt}]
-        \def\steer{32}      % beam angle from broadside (degrees)
-        \def\dx{1.1}        % element spacing (cm)
-
-        % ── Antenna array on baseline ──────────────────────────────────
-        \foreach \i in {0,1,2,3,4} {
-          \node[ant] (a\i) at (\i*\dx, 0) {};
-          \node[font=\tiny, uciNavy] at (\i*\dx, -0.42) {ant \i};
-        }
-        \draw[<->, uciAmber] (0,0.42) -- (\dx,0.42)
-            node[midway, above, font=\tiny]{$d$};
-
-        % ── Broadside reference (vertical dashed) ──────────────────────
-        \draw[dashed, gray!70] (2*\dx, 0.2) -- (2*\dx, 3.2);
-        \node[gray!70, font=\tiny] at (2*\dx + 0.55, 3.0) {broadside};
-
-        % ── Beam direction at angle steer from broadside ───────────────
-        \draw[->, uciBlue, very thick]
-            (2*\dx, 0.2) -- ++({90-\steer}:3.0)
-            node[above right, uciBlue]{beam};
-
-        % ── θ angle marker between broadside and beam ──────────────────
-        \draw[uciBlue, thick]
-            (2*\dx, 0.2) ++(90:1.1) arc (90:90-\steer:1.1);
-        \node[uciBlue] at ({2*\dx + 0.32}, 1.55) {$\theta$};
-
-        % ── Two wavefronts (perpendicular to beam), through ant 0/ant 1
-        \draw[uciBlue!55, dashed]
-            (a0.center) ++({180-\steer}:1.0)
-            -- ($(a0.center) + ({-\steer}:3.0)$);
-        \draw[uciBlue!55, dashed]
-            (a1.center) ++({180-\steer}:1.0)
-            -- ($(a1.center) + ({-\steer}:3.0)$);
-
-        % ── Path-length difference d sin θ between the two wavefronts ──
-        % From ant 1, drop perpendicular onto wavefront through ant 0.
-        % Foot lies at ant 1 - (d sinθ) * (beam direction).
-        \coordinate (foot) at
-            ($(a1.center) + ({90-\steer+180}:{\dx*sin(\steer)})$);
-        \draw[<->, red, very thick] (a1.center) -- (foot)
-            node[midway, right=1pt, red, font=\scriptsize]
-              {$d\sin\theta$};
-
-        % ── Caption below ──────────────────────────────────────────────
-        \node[uciNavy, font=\scriptsize, align=center]
-          at (2*\dx, -1.05)
-          {extra path/element $= d\sin\theta$
-           $\;\Rightarrow\;$
-           $\Delta\phi = \tfrac{2\pi d}{\lambda}\sin\theta$};
-
-        \node[draw=uciNavy, fill=uciGoldPale, rounded corners,
-              font=\tiny, align=center] at (5.7, 2.4)
-          {one PI per element\\ provides $\Delta\phi$};
-      \end{tikzpicture}}
-    \end{column}
-    \begin{column}{0.43\linewidth}
-      \textbf{Idea.} Feed each antenna the \emph{same signal} but with
-      a progressive phase shift $\Delta\phi$ between neighbours. The
-      array radiates a beam at angle
-      \[
-        \boxed{\;\sin\theta
-          = \frac{\lambda}{2\pi d}\,\Delta\phi.\;}
-      \]
-      Change $\Delta\phi$ electronically $\to$ steer $\theta$
-      with no moving parts.
-
-      \medskip
-      \textbf{Why a PI per element?}
-      \begin{itemize}
-        \item Continuous, monotonic phase
-        \item Per-element skew calibration
-        \item Same hardware across the band — only $\Delta\phi$ changes
-      \end{itemize}
-    \end{column}
-  \end{columns}
+% ── Pareto 2: FBW vs Phase Error (absolute) ────────────────────────────────
+\begin{frame}{Fractional Bandwidth vs.\ Absolute Phase Error}
+\begin{columns}[T]
+  \begin{column}{0.70\linewidth}
+  \begin{tikzpicture}
+  \begin{axis}[
+    width=\linewidth, height=5.9cm,
+    xlabel={Fractional BW (\%)},
+    ylabel={$\epsilon_\mathrm{rms}$ ($^\circ$)},
+    xmin=0,  xmax=125,
+    ymin=0,  ymax=13,
+    xtick={0,20,40,60,80,100,120},
+    ytick={0,2,4,6,8,10,12},
+    clip=false,
+  ]
+  %% Active VM
+  \addplot[only marks, mark=*,
+           mark options={fill=uciBlue, draw=uciBlue, scale=1.2}]
+    coordinates { (86.8,2.9) (16.3,9.4) (18.8,11.2) (11.6,5.0)
+                  (12.9,2.2) (14.9,1.4) (15.7,0.58) };
+  %% Passive PI ch.
+  \addplot[only marks, mark=triangle*,
+           mark options={fill=uciNavy, draw=uciNavy, scale=1.2}]
+    coordinates { (8.3,3.5) (21.1,1.5) };
+  %% Passive PS
+  \addplot[only marks, mark=square*,
+           mark options={fill=uciAmber, draw=uciAmber, scale=1.1}]
+    coordinates { (14.3,0.3) (112.5,3.6) };
+  %% New-work labels
+  \node[font=\tiny, anchor=south east] at (axis cs:12.9,2.2)   {Jiang'25};
+  \node[font=\tiny, anchor=north east] at (axis cs:14.9,1.4)   {Wang'18};
+  \node[font=\tiny, anchor=north west] at (axis cs:15.7,0.58)  {KAIST'25};
+  %% Previously unlabeled points
+  \node[font=\tiny, anchor=south west] at (axis cs:86.8, 2.9)  {Qiu'21};
+  \node[font=\tiny, anchor=south east] at (axis cs:16.3, 9.4)  {Pepe PS1};
+  \node[font=\tiny, anchor=north west] at (axis cs:18.8,11.2)  {Pepe PS2};
+  \node[font=\tiny, anchor=south west] at (axis cs:11.6, 5.0)  {Yu'16};
+  \node[font=\tiny, anchor=south west] at (axis cs: 8.3, 3.5)  {Afroz Rx};
+  \node[font=\tiny, anchor=south west] at (axis cs:21.1, 1.5)  {Afroz Tx};
+  %% Passive PS labels
+  \node[font=\tiny, anchor=south west] at (axis cs:14.3,0.3)   {Garg'17};
+  \node[font=\tiny, anchor=south east] at (axis cs:112.5,3.6)  {Anjos'20};
+  \end{axis}
+  \end{tikzpicture}
+  \end{column}
+  \begin{column}{0.27\linewidth}
+  \vspace{2ex}
+  {\scriptsize
+  {\color{uciBlue}$\bullet$}\enspace Active VM\\[0.8ex]
+  {\color{uciNavy}$\blacktriangle$}\enspace Passive PI ch.\\[0.8ex]
+  {\color{uciAmber}$\blacksquare$}\enspace Passive PS
+  }\\[1.5ex]
+  {\tiny
+    Jiang, Wang, KAIST cluster at 13--16\%~FBW,
+    $\epsilon < 3^\circ$.
+  }
+  \end{column}
+\end{columns}
 \end{frame}
 
-\begin{frame}{Phase Resolution $\to$ Beam-Steering Resolution}
-  \textbf{Array equation} ($d$ spacing, $\lambda$ wavelength).
-  Differentiate to map small $\Delta\phi$ to small $\Delta\theta$:
-  \[
-    \Delta\phi = \tfrac{2\pi d}{\lambda}\sin\theta
-    \;\Longrightarrow\;
-    \boxed{\;\Delta\theta
-      = \frac{\lambda}{2\pi d\cos\theta}\,\Delta\phi_{\min}.\;}
-  \]
-
-  For an $N$-bit PI ($\Delta\phi_{\min} = 2\pi/2^N$) at the typical
-  half-wavelength spacing $d=\lambda/2$:
-  $\Delta\theta = (1/\cos\theta)\cdot 2^{-(N-1)}\,$rad.
-
-  \begin{columns}[T]
-    \begin{column}{0.55\linewidth}
-      \centering\footnotesize
-      \begin{tabular}{@{}cccc@{}}
-        \toprule
-        $N$ & $\Delta\phi_{\min}$ & $\Delta\theta_{\,@\,0^\circ}$
-                                  & $\Delta\theta_{\,@\,60^\circ}$ \\
-        \midrule
-        4 & $22.5^\circ$ & $7.2^\circ$  & $14.3^\circ$ \\
-        6 & $5.6^\circ$  & $1.8^\circ$  & $3.6^\circ$  \\
-        8 & $1.4^\circ$  & $0.45^\circ$ & $0.90^\circ$ \\
-        \bottomrule
-      \end{tabular}
-    \end{column}
-    \begin{column}{0.43\linewidth}
-      \begin{alertblock}{Two asymmetries}
-        $1/\cos\theta$ blows up near endfire — same LSB buys coarser
-        steps off-broadside. And PI \emph{nonlinearity} (DNL/INL) sets
-        the worst-case step, not the average.
-      \end{alertblock}
-    \end{column}
-  \end{columns}
+% ── Pareto 3: Phase Error vs Gain / IL ─────────────────────────────────────
+% Afroz Rx/Tx excluded (17-23 dB channel gain includes LNA/PA).
+% Qiu'21 and Jiang'25 excluded (gain unextracted).
+\begin{frame}{Phase Accuracy vs.\ Gain\,/\,Insertion Loss}
+\begin{columns}[T]
+  \begin{column}{0.70\linewidth}
+  \begin{tikzpicture}
+  \begin{axis}[
+    width=\linewidth, height=5.9cm,
+    xlabel={Gain\,/\,IL (dB, positive\,=\,gain)},
+    ylabel={$\epsilon_\mathrm{rms}$ ($^\circ$)},
+    xmin=-10, xmax=6,
+    ymin=0,   ymax=13,
+    xtick={-10,-8,-6,-4,-2,0,2,4,6},
+    ytick={0,2,4,6,8,10,12},
+    clip=false,
+  ]
+  %% Active VM
+  \addplot[only marks, mark=*,
+           mark options={fill=uciBlue, draw=uciBlue, scale=1.2}]
+    coordinates { (2.3,9.4) (0.83,11.2) (1.05,5.0) (-0.4,1.4) (3.1,0.58) };
+  %% Passive PS
+  \addplot[only marks, mark=square*,
+           mark options={fill=uciAmber, draw=uciAmber, scale=1.1}]
+    coordinates { (-7.75,0.3) (-7.4,3.6) };
+  %% New-work labels
+  \node[font=\tiny, anchor=south east] at (axis cs:-0.4,1.4) {Wang'18};
+  \node[font=\tiny, anchor=south west] at (axis cs: 3.1,0.58){KAIST'25};
+  %% Passive PS labels
+  \node[font=\tiny, anchor=south west] at (axis cs:-7.75,0.3) {Garg'17};
+  \node[font=\tiny, anchor=south east] at (axis cs:-7.4, 3.6) {Anjos'20};
+  \node[font=\tiny, anchor=south east] at (axis cs:2.3, 9.4)  {Pepe PS1};
+  \node[font=\tiny, anchor=south east] at (axis cs:0.83,11.2) {Pepe PS2};
+  \node[font=\tiny, anchor=east]       at (axis cs:1.05, 5.0) {Yu'16};
+  \end{axis}
+  \end{tikzpicture}
+  \end{column}
+  \begin{column}{0.27\linewidth}
+  \vspace{2ex}
+  {\scriptsize
+  {\color{uciBlue}$\bullet$}\enspace Active VM\\[0.8ex]
+  {\color{uciAmber}$\blacksquare$}\enspace Passive PS
+  }\\[1.5ex]
+  {\tiny
+    Passive PSs pay 7--8~dB~IL.\\[3pt]
+    Active VMs sit near $0$~dB gain.\\[3pt]
+    {\color{uciNavy!70}Afroz Rx/Tx, Qiu'21, Jiang'25\\excluded (see note).}
+  }
+  \end{column}
+\end{columns}
 \end{frame}
 
-\begin{frame}{Summary}
-  \begin{itemize}\setlength\itemsep{4pt}
-    \item A PI is a \alert{weighted sum of two reference phases}; the
-          weight ratio sets $\phi = \arctan(\beta/\alpha)$, the
-          frequency is unchanged.
-    \item Geometry is just the phasor tip sliding inside an I/Q
-          quadrant; coarse = quadrant select, fine = $N$-bit weight
-          DAC.
-    \item Realised as two CML pairs sharing a load — current-domain
-          summation, no analog multiplier.
-    \item \textbf{SerDes / optical:} sets the data sampling clock
-          phase in fully digital CDR loops at \si{\giga Hz}+ rates.
-    \item \textbf{Phased arrays:} sets per-element progressive phase;
-          $\Delta\theta = \frac{\lambda}{2\pi d\cos\theta}\Delta\phi$
-          ties phase resolution to angular resolution.
-    \item Bit-count of the PI is the lever shared by every
-          application — more bits buy finer eye-centering, lower DSP
-          jitter, finer beam steps.
-  \end{itemize}
+% ── Section 3 ──────────────────────────────────────────────────────────────
+\section{Gap Analysis}
+
+% ── Gap Table ──────────────────────────────────────────────────────────────
+\begin{frame}{Baseline Gaps}
+\vspace{-0.5ex}
+{\scriptsize
+\fitwidth{%
+\begin{tabular}{@{}llll@{}}
+\toprule
+Work & $f_0$ (GHz) & Architecture & Key gap for \SI{35}{\giga\hertz}$\rightarrow$\SI{70}{\giga\hertz} PI \\
+\midrule
+Qiu'21         &  26.5  & Active VM (broadband)   &
+  Unproven above \SI{40}{\giga\hertz}; NF / P1dB not reported \\
+Pepe PS1/PS2   & 85--89 & Active VM (W-band)      &
+  $\sim\!10^\circ$ phase error; NF 11~dB; P1dB ${<}-6$~dBm \\
+Yu'16          &  60.5  & Active VM (60~GHz)      &
+  Needs calibration; NF $\sim\!11$~dB; P1dB $-10$~dBm \\
+Afroz Rx       &  96.0  & Passive PI (Rx ch.)     &
+  Embedded in full Rx chain; 8~GHz phase window \\
+Afroz Tx       &  95.0  & Passive PI (Tx ch.)     &
+  Embedded in full Tx chain; degrades near saturation \\
+Garg'17        &  28.0  & Passive RTPS            &
+  $\sim\!8$~dB insertion loss; not a PI; not broadband \\
+Anjos'20       &  32.0  & Passive APN             &
+  Only 2-bit ($45^\circ$ LSB); 7--10~dB IL; poor scalability \\
+\bottomrule
+\end{tabular}%
+}%
+}
 \end{frame}
 
+% ── Win Conditions ─────────────────────────────────────────────────────────
+\begin{frame}{Win Conditions}
+\begin{alertblock}{vs.\ active vector-modulator baselines}
+\begin{itemize}
+  \item \textbf{W-band VM (Pepe):}
+    $\epsilon_{\phi,35} < 4.5^\circ$ $+$ low doubler AM-PM
+    $\Rightarrow$ $\epsilon_{\Phi,70} < 9^\circ$ (beats Pepe PS1/PS2)
+  \item \textbf{V-band VM (Yu):}
+    $\epsilon_{\phi,35} < 1^\circ$ after calibration
+    (beats Yu'16 calibrated floor)
+\end{itemize}
+\end{alertblock}
+\begin{exampleblock}{vs.\ passive baselines}
+\begin{itemize}
+  \item \textbf{RTPS / APN:}
+    avoid 7--10~dB loss at final carrier; emphasize clock/jitter metrics
+  \item \textbf{W-band passive PI:}
+    present standalone PI block, not a result embedded inside full T/R channel
+\end{itemize}
+\end{exampleblock}
+\end{frame}
+
+% ── Questions ──────────────────────────────────────────────────────────────
 \begin{frame}[standout]
-  Questions?
+Questions
 \end{frame}
 
 \end{document}

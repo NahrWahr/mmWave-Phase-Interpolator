@@ -1,0 +1,324 @@
+% v1.1
+% figures-lib.tex — shared figure macro library for paper + presentation.
+% Spec: docs/superpowers/specs/2026-04-24-figures-lib-design.md
+%
+% Usage (in document preamble, AFTER \usepackage{tikz}):
+%   \input{../figures-lib.tex}
+%   \figstyle{paper}      % or \figstyle{slides}
+%
+% Rules:
+%   • \input in preamble only — never inside tikzpicture / \fitwidth / \resizebox.
+%   • Caller positions every primitive; primitives never pick their own coords.
+%   • Style via figlib/* keys; never hardcode thick / \scriptsize at call sites.
+%
+% To extend: copy a primitive's section, document its bounding box, use figlib/*
+% styles. Atoms = simple \newcommand. Pics = TikZ pic with keyval options.
+
+\RequirePackage{etoolbox}
+\usetikzlibrary{arrows.meta, calc, positioning, shapes.geometric}
+
+% ─── Palette (idempotent: only defines if undefined) ────────────────────
+\providecolor{uciGold}{HTML}{F0C040}
+\providecolor{uciGoldPale}{HTML}{FAF0CC}
+\providecolor{uciBlue}{HTML}{0064A4}
+\providecolor{uciNavy}{HTML}{1B3D6F}
+\providecolor{uciCream}{HTML}{FFF8F0}
+\providecolor{uciAmber}{HTML}{C8830A}
+\providecolor{uciSand}{HTML}{EED8A0}
+
+% ─── Style switch ────────────────────────────────────────────────────────
+\tikzset{
+  figlib/line/.style={thick},
+  figlib/thin/.style={semithick},
+  figlib/font/.style={font=\scriptsize},
+  figlib/tip/.style={>={Stealth[length=2mm]}},
+}
+
+\newcommand{\figstyle}[1]{%
+  \ifstrequal{#1}{slides}{%
+    \tikzset{%
+      figlib/line/.style={thick},
+      figlib/thin/.style={semithick},
+      figlib/font/.style={font=\scriptsize},
+      figlib/tip/.style={>={Stealth[length=2mm]}},
+    }%
+  }{%
+    \tikzset{%
+      figlib/line/.style={semithick},
+      figlib/thin/.style={thin},
+      figlib/font/.style={font=\footnotesize},
+      figlib/tip/.style={>={Stealth[length=1.5mm]}},
+    }%
+  }%
+}
+
+% ============================================================
+% Atoms — simple \newcommand, color via single optional arg.
+% ============================================================
+
+% \phasor[<color>]{<angle-deg>}{<magnitude>}
+% Bbox: from (0,0) extending {magnitude} units at {angle}.
+\newcommand{\phasor}[3][uciBlue]{%
+  \draw[->, figlib/line, figlib/tip, draw=#1] (0,0) -- (#2:#3);
+}
+
+% \phasorL[<color>]{<angle-deg>}{<magnitude>}{<label>}
+\newcommand{\phasorL}[4][uciBlue]{%
+  \draw[->, figlib/line, figlib/tip, draw=#1] (0,0) -- (#2:#3);
+  \node[figlib/font, color=#1] at (#2:{#3+0.28}) {#4};
+}
+
+% \phaseArc[<color>]{<from-deg>}{<to-deg>}{<radius>}{<label>}
+% Bbox: arc of {radius} between the two angles.
+\newcommand{\phaseArc}[5][uciBlue]{%
+  \draw[figlib/thin, draw=#1]
+    (#2:#4) arc[start angle=#2, end angle=#3, radius=#4];
+  \node[figlib/font, color=#1]
+    at ({(#2+#3)/2}:{#4*1.18}) {#5};
+}
+
+% \signal[<color>]{<from-coord>}{<to-coord>}
+% from/to include parens, e.g. (A.east) or (1,2).
+\newcommand{\signal}[3][uciNavy]{%
+  \draw[->, figlib/line, figlib/tip, draw=#1] #2 -- #3;
+}
+
+% \signalL[<color>]{<from>}{<to>}{<label>}
+\newcommand{\signalL}[4][uciNavy]{%
+  \draw[->, figlib/line, figlib/tip, draw=#1] #2 -- #3
+    node[midway, above, figlib/font, color=#1]{#4};
+}
+
+% ============================================================
+% Pics — keyval options. All centered at the placement coord.
+% ============================================================
+
+% pic{block={label=..., width=..., height=...}}
+% Bbox: width × height (cm, bare numbers). Default 1.0 × 0.7.
+\tikzset{
+  pics/block/.style={code={%
+    \tikzset{block opts/.cd, label=, width=1.0, height=0.7, #1}%
+    \pgfmathsetmacro{\figlibBw}{
+      \pgfkeysvalueof{/tikz/block opts/width}/2}%
+    \pgfmathsetmacro{\figlibBh}{
+      \pgfkeysvalueof{/tikz/block opts/height}/2}%
+    \draw[draw=uciNavy, fill=white, figlib/line]
+      (-\figlibBw,-\figlibBh) rectangle (\figlibBw,\figlibBh);
+    \node[figlib/font, color=uciNavy] at (0,0)
+      {\pgfkeysvalueof{/tikz/block opts/label}};
+  }},
+  block opts/.cd,
+    label/.initial=,
+    width/.initial=1.0,
+    height/.initial=0.7,
+}
+
+% pic{sum node}     — '+' in 0.5cm circle.
+\tikzset{
+  pics/sum node/.style={code={%
+    \draw[draw=uciNavy, fill=white, figlib/line]
+      (0,0) circle[radius=0.25cm];
+    \node[figlib/font, color=uciNavy] at (0,0) {$+$};
+  }},
+}
+
+% pic{mixer}        — '×' in 0.5cm circle.
+\tikzset{
+  pics/mixer/.style={code={%
+    \draw[draw=uciNavy, fill=white, figlib/line]
+      (0,0) circle[radius=0.25cm];
+    \node[figlib/font, color=uciNavy] at (0,0) {$\times$};
+  }},
+}
+
+% pic{branch node}  — 3pt filled dot.
+\tikzset{
+  pics/branch node/.style={code={%
+    \fill[uciNavy] (0,0) circle[radius=1.5pt];
+  }},
+}
+
+% pic{delay block={cycles=N, width=..., height=..., label=...}}
+% N=0 → straight wire; N≥1 → that many sine cycles inside the box.
+% Wire enters top mid-x, exits bottom mid-x. Label drawn LEFT of box.
+% Bbox: width × height (cm, bare numbers). Default 0.55 × 0.9.
+\tikzset{
+  pics/delay block/.style={code={%
+    \tikzset{delayblk opts/.cd,
+      cycles=0, width=0.55, height=0.9, label=, #1}%
+    \pgfmathsetmacro{\figlibDhalf}{
+      \pgfkeysvalueof{/tikz/delayblk opts/height}/2}%
+    \pgfmathsetmacro{\figlibDhalfW}{
+      \pgfkeysvalueof{/tikz/delayblk opts/width}/2}%
+    \pgfmathtruncatemacro{\figlibDcyc}{
+      \pgfkeysvalueof{/tikz/delayblk opts/cycles}}%
+    \draw[draw=uciNavy, fill=white, figlib/line]
+      (-\figlibDhalfW,-\figlibDhalf)
+      rectangle (\figlibDhalfW,\figlibDhalf);
+    \node[figlib/font, color=uciNavy, anchor=east, inner sep=2pt]
+      at (-\figlibDhalfW - 0.05, 0)
+      {\pgfkeysvalueof{/tikz/delayblk opts/label}};
+    \ifnum\figlibDcyc=0
+      \draw[figlib/line, draw=uciBlue]
+        (0,\figlibDhalf) -- (0,-\figlibDhalf);
+    \else
+      \pgfmathsetmacro{\figlibDmar}{0.05*
+        \pgfkeysvalueof{/tikz/delayblk opts/height}}%
+      \pgfmathsetmacro{\figlibDspan}{
+        \pgfkeysvalueof{/tikz/delayblk opts/height}-2*\figlibDmar}%
+      \pgfmathsetmacro{\figlibDstep}{\figlibDspan/(4*\figlibDcyc)}%
+      \pgfmathsetmacro{\figlibDtop}{\figlibDhalf-\figlibDmar}%
+      \draw[figlib/line, draw=uciBlue]
+        (0,\figlibDhalf) -- (0,\figlibDtop)
+        \foreach \figlibDk in {1,...,\figlibDcyc}{
+          \pgfextra{%
+            \pgfmathsetmacro{\figlibDya}{
+              \figlibDtop-(4*\figlibDk-3)*\figlibDstep}%
+            \pgfmathsetmacro{\figlibDyb}{
+              \figlibDtop-(4*\figlibDk-2)*\figlibDstep}%
+            \pgfmathsetmacro{\figlibDyc}{
+              \figlibDtop-(4*\figlibDk-1)*\figlibDstep}%
+            \pgfmathsetmacro{\figlibDyd}{
+              \figlibDtop-(4*\figlibDk)*\figlibDstep}%
+          }
+          sin (0.13,\figlibDya) cos (0,\figlibDyb)
+          sin (-0.13,\figlibDyc) cos (0,\figlibDyd)
+        }
+        -- (0,-\figlibDhalf);
+    \fi
+  }},
+  delayblk opts/.cd,
+    cycles/.initial=0,
+    width/.initial=0.55,
+    height/.initial=0.9,
+    label/.initial=,
+}
+
+% pic{antenna array={N=4, spacing=1.0, labels=true, label prefix=ant\space}}
+% First triangle at (0,0); subsequent at (k*spacing, 0). spacing in cm (bare).
+% Bbox: x ∈ [−0.18, (N−1)*spacing+0.18], y ∈ [-0.4, 0.32] (incl labels).
+\tikzset{
+  pics/antenna array/.style={code={%
+    \tikzset{antarr opts/.cd,
+      N=4, spacing=1.0, labels=true, label prefix=ant\space, #1}%
+    \pgfmathtruncatemacro{\figlibAN}{
+      \pgfkeysvalueof{/tikz/antarr opts/N}-1}%
+    \foreach \figlibAi in {0,...,\figlibAN}{%
+      \pgfmathsetmacro{\figlibAx}{
+        \figlibAi*\pgfkeysvalueof{/tikz/antarr opts/spacing}}%
+      \draw[draw=uciNavy, fill=uciSand, figlib/line]
+        (\figlibAx,0) -- (\figlibAx-0.18,0.32)
+        -- (\figlibAx+0.18,0.32) -- cycle;
+      \ifdefstring{\pgfkeysvalueof{/tikz/antarr opts/labels}}{true}{%
+        \node[figlib/font, color=uciNavy, anchor=north]
+          at (\figlibAx,-0.05)
+          {\pgfkeysvalueof{/tikz/antarr opts/label prefix}\figlibAi};%
+      }{}%
+    }%
+  }},
+  antarr opts/.cd,
+    N/.initial=4,
+    spacing/.initial=1.0,
+    labels/.initial=true,
+    label prefix/.initial=ant\space,
+}
+
+% pic{wavefronts={N=3, length=2.4, angle=45, sep=0.7, arrow=true}}
+% N parallel lines at {angle} from +x, length L, separated by sep along normal.
+% First line passes through (0,0); subsequent shifted by sep along the normal.
+% Optional propagation arrow drawn from (0,0) outward along -angle.
+\tikzset{
+  pics/wavefronts/.style={code={%
+    \tikzset{wf opts/.cd,
+      N=3, length=2.4, angle=45, sep=0.7, arrow=true, #1}%
+    \pgfmathtruncatemacro{\figlibWN}{
+      \pgfkeysvalueof{/tikz/wf opts/N}-1}%
+    \pgfmathsetmacro{\figlibWnx}{
+      cos(\pgfkeysvalueof{/tikz/wf opts/angle}+90)}%
+    \pgfmathsetmacro{\figlibWny}{
+      sin(\pgfkeysvalueof{/tikz/wf opts/angle}+90)}%
+    \foreach \figlibWi in {0,...,\figlibWN}{%
+      \pgfmathsetmacro{\figlibWdx}{
+        \figlibWi*\pgfkeysvalueof{/tikz/wf opts/sep}*\figlibWnx}%
+      \pgfmathsetmacro{\figlibWdy}{
+        \figlibWi*\pgfkeysvalueof{/tikz/wf opts/sep}*\figlibWny}%
+      \draw[figlib/line, draw=uciBlue!70]
+        (\figlibWdx,\figlibWdy) --
+          ++(\pgfkeysvalueof{/tikz/wf opts/angle}:%
+             \pgfkeysvalueof{/tikz/wf opts/length});
+    }%
+    \ifdefstring{\pgfkeysvalueof{/tikz/wf opts/arrow}}{true}{%
+      \pgfmathsetmacro{\figlibWpx}{
+        0.5*\pgfkeysvalueof{/tikz/wf opts/length}*
+          cos(\pgfkeysvalueof{/tikz/wf opts/angle})}%
+      \pgfmathsetmacro{\figlibWpy}{
+        0.5*\pgfkeysvalueof{/tikz/wf opts/length}*
+          sin(\pgfkeysvalueof{/tikz/wf opts/angle})}%
+      \draw[->, figlib/line, figlib/tip, draw=uciBlue]
+        ($(\figlibWpx,\figlibWpy)+%
+          (\pgfkeysvalueof{/tikz/wf opts/angle}+90:0.7)$)
+          -- (\figlibWpx,\figlibWpy);
+    }{}%
+  }},
+  wf opts/.cd,
+    N/.initial=3,
+    length/.initial=2.4,
+    angle/.initial=45,
+    sep/.initial=0.7,
+    arrow/.initial=true,
+}
+
+% pic{beam lobe={angle=90, scale=1.0, sidelobes=true, color=uciAmber}}
+% Lobe base at (0,0), main lobe pointing along {angle} from +x.
+% Bbox: roughly 2*scale long, 1*scale wide.
+\tikzset{
+  pics/beam lobe/.style={code={%
+    \tikzset{beam opts/.cd,
+      angle=90, scale=1.0, sidelobes=true, color=uciAmber, #1}%
+    \begin{scope}[shift={(0,0)},
+                  rotate=\pgfkeysvalueof{/tikz/beam opts/angle}-90,
+                  scale=\pgfkeysvalueof{/tikz/beam opts/scale}]
+      \fill[\pgfkeysvalueof{/tikz/beam opts/color}!30,
+            draw=\pgfkeysvalueof{/tikz/beam opts/color}, figlib/line]
+        (0,0) .. controls (0.9,2.4) and (-0.9,2.4) .. (0,0);
+      \ifdefstring{\pgfkeysvalueof{/tikz/beam opts/sidelobes}}{true}{%
+        \fill[\pgfkeysvalueof{/tikz/beam opts/color}!30,
+              draw=\pgfkeysvalueof{/tikz/beam opts/color}, figlib/line]
+          (0,0) .. controls (0.9,0.7) and (0.35,0.7) .. (0,0);
+        \fill[\pgfkeysvalueof{/tikz/beam opts/color}!30,
+              draw=\pgfkeysvalueof{/tikz/beam opts/color}, figlib/line]
+          (0,0) .. controls (-0.9,0.7) and (-0.35,0.7) .. (0,0);
+      }{}%
+    \end{scope}
+  }},
+  beam opts/.cd,
+    angle/.initial=90,
+    scale/.initial=1.0,
+    sidelobes/.initial=true,
+    color/.initial=uciAmber,
+}
+
+% pic{axes xy={xmin=-1, xmax=1, ymin=-1, ymax=1, xlabel=$x$, ylabel=$y$}}
+% Origin at placement coord. Bbox: (xmax-xmin) × (ymax-ymin).
+\tikzset{
+  pics/axes xy/.style={code={%
+    \tikzset{axes opts/.cd,
+      xlabel=$x$, ylabel=$y$,
+      xmin=-1, xmax=1, ymin=-1, ymax=1, #1}%
+    \draw[->, figlib/thin, figlib/tip, draw=uciNavy]
+      (\pgfkeysvalueof{/tikz/axes opts/xmin},0) --
+      (\pgfkeysvalueof{/tikz/axes opts/xmax},0)
+      node[right, figlib/font]{\pgfkeysvalueof{/tikz/axes opts/xlabel}};
+    \draw[->, figlib/thin, figlib/tip, draw=uciNavy]
+      (0,\pgfkeysvalueof{/tikz/axes opts/ymin}) --
+      (0,\pgfkeysvalueof{/tikz/axes opts/ymax})
+      node[above, figlib/font]{\pgfkeysvalueof{/tikz/axes opts/ylabel}};
+  }},
+  axes opts/.cd,
+    xlabel/.initial=$x$,
+    ylabel/.initial=$y$,
+    xmin/.initial=-1, xmax/.initial=1,
+    ymin/.initial=-1, ymax/.initial=1,
+}
+
+\endinput
